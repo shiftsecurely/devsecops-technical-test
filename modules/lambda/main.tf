@@ -5,8 +5,9 @@ data "archive_file" "lambda_zip" {
 }
 
 resource "aws_security_group" "lambda_sg" {
-  name   = "${var.name_prefix}-lambda-sg"
-  vpc_id = var.vpc_id
+  name        = "${var.name_prefix}-lambda-sg"
+  description = "Security group for Lambda function allowing HTTPS egress to VPC endpoints"
+  vpc_id      = var.vpc_id
 
   egress {
     from_port        = 443
@@ -54,8 +55,12 @@ resource "aws_lambda_function" "fn" {
   memory_size      = var.lambda_memory_mb
   timeout          = var.lambda_timeout_sec
   vpc_config {
-  subnet_ids         = var.private_subnet_ids
-  security_group_ids = [aws_security_group.lambda_sg.id]
-}
+    subnet_ids         = var.private_subnet_ids
+    security_group_ids = [aws_security_group.lambda_sg.id]
+  }
   environment { variables = var.environment_vars }
+
+  tracing_config {
+    mode = "Active" // Enables X-Ray tracing
+  }
 }

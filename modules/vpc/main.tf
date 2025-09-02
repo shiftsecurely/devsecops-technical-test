@@ -17,7 +17,7 @@ resource "aws_internet_gateway" "igw" {
 resource "aws_subnet" "public" {
   vpc_id                  = local.vpc_id
   cidr_block              = var.public_subnet_cidrs[0]
-  map_public_ip_on_launch = true
+  map_public_ip_on_launch = false
   availability_zone       = data.aws_availability_zones.available.names[0]
   tags = { Name = "${var.name_prefix}-public-az1", Tier = "public" }
 }
