@@ -5,6 +5,7 @@ data "aws_partition" "current" {}
 resource "aws_cloudwatch_log_group" "api_access" {
   name              = "/aws/apigw/${var.name_prefix}-http"
   retention_in_days = var.log_retention
+  kms_key_id        = "arn:aws:kms:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:alias/aws/logs" // Enable encryption with AWS managed key
 }
 
 resource "aws_apigatewayv2_api" "http_api" {
@@ -28,6 +29,20 @@ resource "aws_apigatewayv2_stage" "prod" {
   api_id      = aws_apigatewayv2_api.http_api.id
   name        = "prod"
   auto_deploy = true
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_access.arn
+    format          = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      routeKey       = "$context.routeKey"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+    })
+  }
 }
 
 resource "aws_lambda_permission" "apigw_invoke" {
